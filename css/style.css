@@ -1,0 +1,11 @@
+body {
+	padding: 0px;
+	margin: 0px;
+	background-color: #000000bd;
+	color: #ffffff;
+	touch-action: none;
+	height: 100%;
+	overflow: hidden;
+	width: 100%;
+	position: fixed;
+}
