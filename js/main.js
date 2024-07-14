@@ -36,32 +36,32 @@
     }
 
     // The ball
-    const ball = new PIXI.Sprite(PIXI.Texture.WHITE);
-
+    const ballTexture = await PIXI.Assets.load('assets/ball.png');
+    const ball = new PIXI.Sprite(ballTexture);
     ball.width = 40;
     ball.height = 40;
     ball.position.set((app.screen.width - 100) / 2 - ball.width / 2, (app.screen.height - 100) / 2 - ball.height / 2);
-    ball.tint = 0x00ff00;
+    // ball.tint = 0x00ff00;
     ball.acceleration = new PIXI.Point(0);
     ball.mass = 3;
 
     // The pad on left side
-    const redPad = new PIXI.Sprite(PIXI.Texture.WHITE);
+    const redPadTexture = await PIXI.Assets.load('assets/red_pad.png');
+    const redPad = new PIXI.Sprite(redPadTexture);
 
-    redPad.width = 30;
-    redPad.height = 150;
+    redPad.width = 75;
+    redPad.height = 225;
     redPad.position.set(0, app.screen.height / 2 - redPad.height / 2);
-    redPad.tint = 0xff0000;
     redPad.acceleration = new PIXI.Point(0);
     redPad.mass = 1;
 
     // The pad on right side
-    const bluePad = new PIXI.Sprite(PIXI.Texture.WHITE);
+    const bluePadTexture = await PIXI.Assets.load('assets/blue_pad.png');
+    const bluePad = new PIXI.Sprite(bluePadTexture);
 
-    bluePad.width = 30;
-    bluePad.height = 150;
+    bluePad.width = 75;
+    bluePad.height = 225;
     bluePad.position.set(app.screen.width - bluePad.width, app.screen.height / 2 - bluePad.height / 2);
-    bluePad.tint = 0x0000bb;
     bluePad.acceleration = new PIXI.Point(0);
     bluePad.mass = 1;
 
@@ -71,7 +71,6 @@
     const scoreTextStyle = new PIXI.TextStyle({
         fontFamily: 'Arial',
         fontSize: 156,
-        // fontStyle: 'italic',
         fontWeight: 'bold',
         fill: '111111',
         stroke: { color: '#4a1850', width: 5, join: 'round' },
@@ -82,7 +81,6 @@
             distance: 6,
         },
         wordWrap: false,
-        // wordWrapWidth: 440,
     });
 
     const scoreText = new PIXI.Text({
