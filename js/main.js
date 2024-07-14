@@ -1,17 +1,29 @@
 (async () => {
-    // Create a new application
     const app = new PIXI.Application();
-
-    // Initialize the application
-    await app.init({ background: '#111', resizeTo: window });
+    await app.init({ background: '#ffffff', resizeTo: window });
 
     // Append the application canvas to the document body
     document.body.appendChild(app.canvas);
+
+    // Field background
+    const backgroundImage = await PIXI.Assets.load('assets/background.png');
+    const background = new PIXI.Sprite(backgroundImage);
+    background.width = app.screen.width;
+    background.height = app.screen.height;
+    background.alpha = 0.50;
 
     // Options for how objects interact
     // How fast the pad moves and looses speed
     const movementSpeed = 0.03;
     const dampeningValue = 0.95;
+
+    // How fast horisontally ball start moving
+    const ballStartSpeed = 5;
+
+    // ball speedup factor
+    const ballSpeedup = 1.001;
+    //ball curve dampening
+    const ballCurveDamp = 0.9;
 
     // Test For Hit
     // A basic AABB check between two different squares
@@ -44,6 +56,7 @@
     // ball.tint = 0x00ff00;
     ball.acceleration = new PIXI.Point(0);
     ball.mass = 3;
+    ball.curve = 0;
 
     // The pad on left side
     const redPadTexture = await PIXI.Assets.load('assets/red_pad.png');
@@ -51,7 +64,7 @@
 
     redPad.width = 75;
     redPad.height = 225;
-    redPad.position.set(0, app.screen.height / 2 - redPad.height / 2);
+    redPad.position.set(redPad.width / 2, app.screen.height / 2 - redPad.height / 2);
     redPad.acceleration = new PIXI.Point(0);
     redPad.mass = 1;
 
@@ -61,18 +74,19 @@
 
     bluePad.width = 75;
     bluePad.height = 225;
-    bluePad.position.set(app.screen.width - bluePad.width, app.screen.height / 2 - bluePad.height / 2);
+    bluePad.position.set(app.screen.width - bluePad.width * 1.5, app.screen.height / 2 - bluePad.height / 2);
     bluePad.acceleration = new PIXI.Point(0);
     bluePad.mass = 1;
 
-    // Score
+    // Score text
     var redScore = 0;
     var blueScore = 0;
     const scoreTextStyle = new PIXI.TextStyle({
         fontFamily: 'Arial',
         fontSize: 156,
         fontWeight: 'bold',
-        fill: '111111',
+        fill: 'aaaaaa90',
+        alpha: 0.8,
         stroke: { color: '#4a1850', width: 5, join: 'round' },
         dropShadow: {
             color: '#eeeeee',
@@ -90,8 +104,6 @@
 
     scoreText.x = app.screen.width / 2 - scoreText.width / 2;
     scoreText.y = app.screen.height / 2 - scoreText.height / 2;
-
-    app.stage.addChild(scoreText);
 
     ///////////////////
 
@@ -146,7 +158,7 @@
 
     // Start the ball
     var plusOrMinus = Math.random() < 0.5 ? -1 : 1;
-    ball.acceleration.set(3 * plusOrMinus, Math.random());
+    ball.acceleration.set(ballStartSpeed * plusOrMinus, Math.random() * plusOrMinus);
 
     var mouseMovementEnabled = false;
     // Listen for animate update
@@ -157,8 +169,9 @@
         redPad.acceleration.set(0, redPad.acceleration.y * dampeningValue);
         bluePad.acceleration.set(0, bluePad.acceleration.y * dampeningValue);
 
-        // ball acceleration up
-        ball.acceleration.x = ball.acceleration.x * 1.0001;
+        // ball acceleration up and curve dampening
+        ball.acceleration.x *= ballSpeedup;
+        ball.curve *= ballCurveDamp;
 
         // Check whether the ball ever touches uper and lower border
         // If so, reverse acceleration in that direction
@@ -174,8 +187,9 @@
         // Check whether the ball ever touches left border
         // If so, give ball and point to the blue pad player
         if (ball.x < 0) {
+            ball.x = app.screen.width / 2;
             ball.acceleration.y = 0;
-            ball.acceleration.x = 3;
+            ball.acceleration.x = ballStartSpeed;
             blueScore++;
             scoreText.text = redScore + " : " + blueScore;
             scoreText.x = app.screen.width / 2 - scoreText.width / 2;
@@ -186,8 +200,9 @@
         // Check whether the ball ever touches right border
         // If so, give ball and point to the red pad player
         if (ball.x > app.screen.width - ball.width) {
+            ball.x = app.screen.width / 2;
             ball.acceleration.y = 0;
-            ball.acceleration.x = -3;
+            ball.acceleration.x = -ballStartSpeed;
             redScore++;
             scoreText.text = redScore + " : " + blueScore;
             scoreText.x = app.screen.width / 2 - scoreText.width / 2;
@@ -274,5 +289,5 @@
     });
 
     // Add to stage
-    app.stage.addChild(redPad, bluePad, ball);
+    app.stage.addChild(background, scoreText, redPad, bluePad, ball);
 })();
