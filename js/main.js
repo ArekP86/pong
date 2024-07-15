@@ -81,7 +81,7 @@
 
     redPad.width = 75;
     redPad.height = 225;
-    redPad.position.set(redPad.width / 2, app.screen.height / 2 - redPad.height / 2);
+    redPad.position.set(redPad.width * 2, app.screen.height / 2 - redPad.height / 2);
     redPad.acceleration = new PIXI.Point(0);
     redPad.mass = 1;
 
@@ -91,7 +91,7 @@
 
     bluePad.width = 75;
     bluePad.height = 225;
-    bluePad.position.set(app.screen.width - bluePad.width * 1.5, app.screen.height / 2 - bluePad.height / 2);
+    bluePad.position.set(app.screen.width - bluePad.width * 3, app.screen.height / 2 - bluePad.height / 2);
     bluePad.acceleration = new PIXI.Point(0);
     bluePad.mass = 1;
 
@@ -208,6 +208,7 @@
         // If so, give ball and point to the blue pad player
         if (ballCenter.x - ball.radius < 0) {
             ball.x = app.screen.width / 2;
+            ball.curve = 0;
             ball.acceleration.y = 0;
             ball.acceleration.x = ballStartSpeed;
             blueScore++;
@@ -221,6 +222,7 @@
         // If so, give ball and point to the red pad player
         if (ballCenter.x + ball.radius > app.screen.width) {
             ball.x = app.screen.width / 2;
+            ball.curve = 0;
             ball.acceleration.y = 0;
             ball.acceleration.x = -ballStartSpeed;
             redScore++;
