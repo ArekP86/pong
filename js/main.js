@@ -14,7 +14,7 @@
 
     // Options for how objects interact
     // How fast the pad moves and looses speed
-    const movementSpeed = 0.03;
+    const movementSpeed = 0.01;
     const dampeningValue = 0.95;
 
     // How fast horisontally ball start moving
@@ -23,19 +23,30 @@
     // ball speedup factor
     const ballSpeedup = 1.001;
     //ball curve dampening
-    const ballCurveDamp = 0.9;
+    const ballCurveDamp = 0.99;
+    // ball Curve strength for changing direction
+    const curveDirectionChangingFactor = 0.03;
+
+    function getCenter(obj) {
+        const bounds = obj.getBounds();
+        const center = {
+            x: bounds.x + bounds.width / 2,
+            y: bounds.y + bounds.height / 2
+        };
+        return center;
+    }
 
     // Test For Hit
     // A basic AABB check between two different squares
-    function testForAABB(object1, object2) {
-        const bounds1 = object1.getBounds();
-        const bounds2 = object2.getBounds();
+    function testForBallProximity(ball, pad) {
+        const padBounds = pad.getBounds();
+        const ballCenter = getCenter(ball);
 
         return (
-            bounds1.x < bounds2.x + bounds2.width
-            && bounds1.x + bounds1.width > bounds2.x
-            && bounds1.y < bounds2.y + bounds2.height
-            && bounds1.y + bounds1.height > bounds2.y
+            ballCenter.x - ball.radius < padBounds.x + padBounds.width
+            && ballCenter.x + ball.radius > padBounds.x
+            && ballCenter.y - ball.radius < padBounds.y + padBounds.height
+            && ballCenter.y + ball.radius > padBounds.y
         );
     }
 
@@ -47,13 +58,19 @@
         return Math.hypot(a, b);
     }
 
+    function rotateAccelerationByCurveValue(acceleration, curve) {
+        acceleration.x = acceleration.x * Math.cos(curve * curveDirectionChangingFactor) - acceleration.y * Math.sin(curve * curveDirectionChangingFactor);
+        acceleration.y = acceleration.x * Math.sin(curve * curveDirectionChangingFactor) + acceleration.y * Math.cos(curve * curveDirectionChangingFactor);
+    }
+
     // The ball
     const ballTexture = await PIXI.Assets.load('assets/ball.png');
     const ball = new PIXI.Sprite(ballTexture);
     ball.width = 40;
     ball.height = 40;
+    ball.radius = 20;
+    ball.anchor.set(0.5, 0.5);
     ball.position.set((app.screen.width - 100) / 2 - ball.width / 2, (app.screen.height - 100) / 2 - ball.height / 2);
-    // ball.tint = 0x00ff00;
     ball.acceleration = new PIXI.Point(0);
     ball.mass = 3;
     ball.curve = 0;
@@ -160,6 +177,8 @@
     var plusOrMinus = Math.random() < 0.5 ? -1 : 1;
     ball.acceleration.set(ballStartSpeed * plusOrMinus, Math.random() * plusOrMinus);
 
+    const pivotVisualisation = new PIXI.Sprite(PIXI.Texture.WHITE); // TODO: remove
+
     var mouseMovementEnabled = false;
     // Listen for animate update
     app.ticker.add((time) => {
@@ -173,20 +192,21 @@
         ball.acceleration.x *= ballSpeedup;
         ball.curve *= ballCurveDamp;
 
-        // Check whether the ball ever touches uper and lower border
+        // Check whether the ball ever touches upper and lower border
         // If so, reverse acceleration in that direction
-        if (ball.y <= 0) {
-            ball.y = 1;
+        const ballCenter = getCenter(ball);
+        if (ballCenter.y - ball.radius <= 0) {
+            ball.y += 1;
             ball.acceleration.y = -ball.acceleration.y;
         }
-        if (ball.y >= app.screen.height - ball.height) {
-            ball.y = app.screen.height - ball.height - 1;
+        if (ballCenter.y + ball.radius >= app.screen.height) {
+            ball.y -= 1;
             ball.acceleration.y = -ball.acceleration.y;
         }
 
         // Check whether the ball ever touches left border
         // If so, give ball and point to the blue pad player
-        if (ball.x < 0) {
+        if (ballCenter.x - ball.radius < 0) {
             ball.x = app.screen.width / 2;
             ball.acceleration.y = 0;
             ball.acceleration.x = ballStartSpeed;
@@ -199,7 +219,7 @@
 
         // Check whether the ball ever touches right border
         // If so, give ball and point to the red pad player
-        if (ball.x > app.screen.width - ball.width) {
+        if (ballCenter.x + ball.radius > app.screen.width) {
             ball.x = app.screen.width / 2;
             ball.acceleration.y = 0;
             ball.acceleration.x = -ballStartSpeed;
@@ -254,12 +274,20 @@
         }
 
         // collisions check
-        if (testForAABB(ball, redPad)) {
+        if (testForBallProximity(ball, redPad)) {
             ball.acceleration.set(-ball.acceleration.x, ball.acceleration.y * 0.5 + 0.1 * ((ball.y + ball.height / 2) - (redPad.y + redPad.height / 2)));
+            ball.curve = -redPad.acceleration.y * curveDirectionChangingFactor;
         }
-        if (testForAABB(ball, bluePad)) {
+        if (testForBallProximity(ball, bluePad)) {
             ball.acceleration.set(-ball.acceleration.x, ball.acceleration.y * 0.5 + 0.1 * ((ball.y + ball.height / 2) - (bluePad.y + bluePad.height / 2)));
+            ball.curve = bluePad.acceleration.y * curveDirectionChangingFactor;
         }
+
+        //rotate ball
+        ball.rotation += ball.curve * delta;
+
+        // change ball direction based on curve
+        rotateAccelerationByCurveValue(ball.acceleration, ball.curve);
 
         // move ball
         ball.x += ball.acceleration.x * delta;
